@@ -23,7 +23,6 @@
 			
 			public static function _include($className)
 			{
-				
 				$pathParts = explode('\\', strtolower($className));
 				$className = end($pathParts);
 				
@@ -36,9 +35,6 @@
 						return true;
 					}
 				}
-				
-				
-				
 				require_once(self::$file);
 			}
 		 
