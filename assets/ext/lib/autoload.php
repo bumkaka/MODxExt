@@ -28,7 +28,7 @@
 				
 				$PATH = Config::get('path'); 
 				foreach($PATH as $value){
-					$file = EXT_BASE.$value.$className.'.php';
+					$file = $value.$className.'.php';
 					if (is_file( $file )){
 						self::$file = $file;
 						require_once(self::$file);

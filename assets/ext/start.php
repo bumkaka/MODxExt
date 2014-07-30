@@ -32,6 +32,6 @@ Config::set(
 /*
  *  Injections )
  */
-Inj::modx(&$modx);
+Inj::modx($modx);
 
 

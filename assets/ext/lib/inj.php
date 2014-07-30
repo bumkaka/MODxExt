@@ -10,7 +10,12 @@ class Inj{
 	protected static $_provider = array();
 
     public static function __callstatic( $method , $args){
-        static::$_provider[ $method ] = $args[0];
+    	if ( empty($args) ){
+    		return static::$_provider[$method];
+    	} else {
+    		static::$_provider[ $method ] = $args[0];
+    	}
+        
     }
 
     public static function get( $name ){

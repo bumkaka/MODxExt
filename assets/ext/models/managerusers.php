@@ -1,5 +1,7 @@
 <?php
 
+
+
 class ManagerUsers extends ModelFasade { 
 	public static $model = 'ModxManagerUsers';
 }

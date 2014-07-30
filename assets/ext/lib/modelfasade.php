@@ -11,7 +11,8 @@ class ModelFasade{
 
         # Set correc child Model $_table with prefix
 		$model = static::$model;
-		$model::$_table = Config::get('prefix').$model::$_table ;
+		//$model::$_table = Config::get('prefix').$model::$_table ;
+		$model::$_table = inj('modx')->db->config['table_prefix'].$model::$_table ;
 
 		return Model::factory($model)->$method( empty($args[0])?'':$args[0] );
 	}
