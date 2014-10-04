@@ -3,17 +3,68 @@
 /*
 *
 *   
-*   Template::Load('add-popup')->parse($config)->get()
-*   Template::getTpl('add-popup')->parse($config)->get()
+Config::set('path', array( dirname(__FILE__).'/views/'));
+Config::set('Template_prefix_before','{');
+Config::set('Template_prefix_after','}');
+
+
+We have: file "news.php"
+<div>
+	<div class="widget_head"><h2>{TILTE}</h2></div>
+	
+	<div class="widget_body">
+		<ul>
+			{BLOCK list}
+				<li>
+					<h3>{TITLE}</h3>
+					<p>{INTROTEXT}</p>
+				</li>
+			{/BLOCK}
+		<ul>
+	</div>
+
+</div>
+
+
+USE:
+1)  echo Template::Load('news')->parse( array('title'=>'This is a cool title') )->get();
+
+2)  $news = Template::Load('news');
+	$block_news = $news->getBlock('list');
+
+	
+
+   Template::getTpl('add-popup')->parse($config)->get()
 *
 */
+if(!class_exists('Base')){
+	class Base{
+		static $instance;
+		static function this() {
+			if (static::$instance === null) static::$instance = new static();
+			return static::$instance;
+		}
+	}
+}
+
+
+
 
 class Template extends Base{
-	public  $template;
+	public $template;
+	public $blocks = array();
 	public  $orig_template;
 	function __construct( $tpl ){
+		preg_match_all('~\{\s*block\s*([^\}]*)\}(.*)\{\/\s*block\s*\}~isU', $tpl, $matches );
+
+		if ($matches[0]){
+			foreach($matches[0] as $key=>$value){
+				$block[ trim($matches[1][$key]) ] = $matches[2][$key];
+			}
+			$this->blocks = $block;
+		}
+	
 		$this->orig_template = $this->template = $tpl;
-		
 		return $this;
 	}
 
@@ -62,7 +113,11 @@ class Template extends Base{
 	}
 
 
-
+	public function getBlock( $name ){
+		return new self( $this->blocks[$name] );
+	}
+	
+	
 	public function parseTpl( $tpl, $field, $lt , $gt){
 		return Inj::modx()->parseText($tpl, $field, $lt , $gt);
 	}
@@ -76,19 +131,24 @@ class Template extends Base{
 	}
 
 	public function parse( $field, $prefix ='', $suffix =''){
+		$_b = Config::get('Template_prefix_before');
+		$_a = Config::get('Template_prefix_after');
+		$_b = empty($_b)? '[+' : $_b;
+		$_a = empty($_a)? '+]' : $_a;
 		if (!is_array($field)) return $this;
-		
-		
 		foreach ($field as $key => $value){
-			
 			if (is_array($value)) {
 				$this->parse($value, $prefix==''?$key.'.':$prefix.'.'.$key.'.' );
 			} else {
-				$this->template = str_replace('[+'.$prefix.$key.$suffix.'+]', $value, $this->template);
+				if( array_key_exists($key, $this->blocks) ){
+					preg_match_all('~\{\s*block\s*'.preg_quote($key).'\s*\}(.*)\{\/\s*block\s*\}~isU', $this->template, $matches );
+					foreach($matches[0] as $k=>$v){
+						$this->template = str_replace($v, $value, $this->template );
+					}
+				}
+				$this->template = str_replace( $_b.$prefix.$key.$suffix.$_a, $value, $this->template);
 			}
-			
 		}
-		
 		return $this;
 	}
 
@@ -98,7 +158,6 @@ class Template extends Base{
 		if ($clear) {
 			$this->template = static::clear( $this->template );
 		} 
-		
 		return $this->template;
 	}
 
@@ -111,14 +170,24 @@ class Template extends Base{
 	*
 	*/
 
-	static function clear( $template){
-		$matches =array();
-		preg_match_all('~\[\+(.*?)\+\]~s', $template, $matches );
-		if ($matches[0]) {
-			$template = str_replace($matches[0], '', $template );
+	static function clear( $tpl){
+		/* clear all {BLOCK}*/
+		preg_match_all('~\{\s*block\s*([^\}]*)\}(.*)\{\/\s*block\s*\}~isU', $tpl, $matches );
+		if ($matches[0]){
+			foreach($matches[0] as $key=>$value){
+				$tpl = str_replace($value, '', $tpl );
+			}
 		}
-
-		return $template;
+		
+		$matches =array();
+		$pr_b[0]= preg_quote( Config::get('Template_prefix_before') ); 
+		$pr_b[1]= preg_quote( Config::get('Template_prefix_after') ); 
+		
+		preg_match_all('~'.$pr_b[0].'(.*?)'.$pr_b[1].'~s', $tpl, $matches );
+		if ($matches[0]) {
+			$tpl = str_replace($matches[0], '', $tpl );
+		}
+		return $tpl;
 	}
 }
 
